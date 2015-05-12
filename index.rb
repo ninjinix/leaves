@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
-require "cgi"
+require 'cgi'
+require 'fileutils'
 
 SITE_NAME = 'Masonry Cloud'
 
@@ -65,8 +66,8 @@ function touchItem(s) {
   $.ajax({
     url: "index.rb", type: "GET", cache: false, data: { touch:s },
     success: function(data, dataType) {
-      var n = $('#'+s).get(0);
-      masonry.remove(n);
+      masonry.remove($('#'+s).get(0));
+      masonry.remove($('.item.main').get(0));
       var v = $(data).get(0);
       container.insertBefore(v, container.firstChild);
       masonry.prepended(v);
@@ -246,8 +247,10 @@ end
 def main
 
   if cgip(:touch)
+    FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
     return contentText(<<EOD)
 #{xmain cgip(:touch)}
+#{xsub files[0]}
 EOD
   end
 
