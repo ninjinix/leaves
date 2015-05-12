@@ -66,9 +66,9 @@ function touchItem(s) {
   $.ajax({
     url: "index.rb", type: "GET", cache: false, data: { touch:s },
     success: function(data, dataType) {
-      masonry.remove($('#'+s).get(0));
-      masonry.remove($('.item.main').get(0));
-      var v = $(data).get(0);
+      masonry.remove($('#'+s)[0]);
+      masonry.remove($('.item.main')[0]);
+      var v = $(data)[0];
       container.insertBefore(v, container.firstChild);
       masonry.prepended(v);
     },
@@ -77,7 +77,7 @@ function touchItem(s) {
 
 }
 $(function(){
-  container = $(".masonry").get(0);
+  container = $(".masonry")[0];
   masonry = new Masonry(container, {
     itemSelector: '.item',
     columnWidth: 0,
