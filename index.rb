@@ -64,11 +64,13 @@ function touchItem(s) {
 //window.alert(s);
 
   $.ajax({
-    url: "index.rb", type: "GET", cache: false, data: { touch:s },
+    type: "GET", scriptCharset: 'utf-8', dataType: "json", cache: false,
+    url: "index.rb", data: { touch:s },
     success: function(data, dataType) {
       masonry.remove($('#'+s)[0]);
       masonry.remove($('.item.main')[0]);
-      var v = $(data)[0];
+    //var v = $(data)[0];
+      var v = $(data[0])[0];
       container.insertBefore(v, container.firstChild);
       masonry.prepended(v);
     },
@@ -244,14 +246,25 @@ def contentText(s)
   "Content-type: text/plean; charset=utf-8\n\n"+s
 end
 
+def contentJson(s)
+  <<EOD
+Content-Type: application/json; charset=utf-8
+
+["#{s.gsub(/[\r\n]/,'').gsub(/"/,'\"')}"]
+EOD
+#["#{s.gsub(/(\r|\n)/,'').gsub(/"/,'\"')}"]
+#["<div class='item main'>.<div>"]
+
+end
+
 def main
 
   if cgip(:touch)
     FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
-    return contentText(<<EOD)
+    return contentJson(<<EOD)
 #{xmain cgip(:touch)}
-#{xsub files[0]}
 EOD
+#{xsub files[0]}
   end
 
   if cgip(:open)
