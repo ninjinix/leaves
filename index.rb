@@ -88,25 +88,31 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
+function removeItem(v) {
+  masonry.remove(v);
+}
 function prependItem(v) {
   container.insertBefore(v, container.firstChild);
   masonry.prepended(v);
 }
 
-function touchItem(s) {
+function ajaxPost(d, f) {
   $.ajax({
-    type: "GET", scriptCharset: 'utf-8', dataType: "json", cache: false,
-    url: "#{SCRIPT_NAME}", data: { touch:s },
-    success: function(data, dataType) {
-      masonry.remove($('#'+s)[0]);
-      masonry.remove($('.item.main')[0]);
-      prependItem($(data.sub)[0]);
-      prependItem($(data.main)[0]);
-    },
+    type: "POST", scriptCharset: 'utf-8', dataType: "json", cache: false,
+    url: "#{SCRIPT_NAME}", data: d, success: f,
     error: function(xhr, textStatus, errorThrown) { alert(textStatus); }
   });
-
 }
+
+function touchItem(s) {
+  ajaxPost({touch:s}, function(data, dataType) {
+    removeItem($('#'+s)[0]);
+    removeItem($('.item.main')[0]);
+    prependItem($(data.sub)[0]);
+    prependItem($(data.main)[0]);
+  });
+}
+
 $(function(){
   container = $(".masonry")[0];
   masonry = new Masonry(container, {
