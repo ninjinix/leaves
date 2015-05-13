@@ -1,7 +1,38 @@
 #!/usr/bin/ruby
 require 'cgi'
 require 'fileutils'
+#================================================================
+def icgi
+  $cgi ||= CGI.new
+end
 
+def cgip(s)
+  icgi.params[s.to_s].first
+end
+
+def esc(s)
+  s ? CGI.escapeHTML(s) : nil
+end
+
+def unesc(s)
+  s ? CGI.unescapeHTML(s) : nil
+end
+
+def contentText(s)
+  "Content-type: text/plean; charset=utf-8\n\n"+s
+end
+
+def contentJson(s)
+  "Content-Type: application/json; charset=utf-8\n\n"+s
+end
+
+def s2json(s)
+  '"'+s.gsub(/\r/,'\r').gsub(/\n/,'\n').gsub(/"/,'\"')+'"'
+end
+
+SCRIPT_NAME = File.basename(icgi.script_name)
+
+#================================================================
 SITE_NAME = 'Masonry Cloud'
 
 CSS = <<EOD
@@ -57,22 +88,20 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
-function writeItem() {
-  return "";
+function prependItem(v) {
+  container.insertBefore(v, container.firstChild);
+  masonry.prepended(v);
 }
-function touchItem(s) {
-//window.alert(s);
 
+function touchItem(s) {
   $.ajax({
     type: "GET", scriptCharset: 'utf-8', dataType: "json", cache: false,
-    url: "index.rb", data: { touch:s },
+    url: "#{SCRIPT_NAME}", data: { touch:s },
     success: function(data, dataType) {
       masonry.remove($('#'+s)[0]);
       masonry.remove($('.item.main')[0]);
-    //var v = $(data)[0];
-      var v = $(data[0])[0];
-      container.insertBefore(v, container.firstChild);
-      masonry.prepended(v);
+      prependItem($(data.sub)[0]);
+      prependItem($(data.main)[0]);
     },
     error: function(xhr, textStatus, errorThrown) { alert(textStatus); }
   });
@@ -134,24 +163,6 @@ function writeNewBox() {
 //-->
 EOD
 
-def icgi
-  $cgi ||= CGI.new
-end
-
-def cgip(s)
-  icgi.params[s.to_s].first
-end
-
-def esc(s)
-  s ? CGI.escapeHTML(s) : nil
-end
-
-def unesc(s)
-  s ? CGI.unescapeHTML(s) : nil
-end
-
-SCRIPT_NAME = File.basename(icgi.script_name)
-
 def files
   $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.
     map{|i| CGI.unescape(File.basename(i))}
@@ -200,12 +211,6 @@ def itemMenu(i)
 EOD
 end
 
-def itemFoot(i)
-  <<EOD
-<div><a href="#">Read more...</a></div>
-EOD
-end
-
 def xmain(t)
   return "" unless t
   s = CGI.escape(t)
@@ -242,29 +247,17 @@ def allItems()
   a.join
 end
 
-def contentText(s)
-  "Content-type: text/plean; charset=utf-8\n\n"+s
-end
-
-def contentJson(s)
-  <<EOD
-Content-Type: application/json; charset=utf-8
-
-["#{s.gsub(/[\r\n]/,'').gsub(/"/,'\"')}"]
-EOD
-#["#{s.gsub(/(\r|\n)/,'').gsub(/"/,'\"')}"]
-#["<div class='item main'>.<div>"]
-
-end
-
 def main
 
   if cgip(:touch)
+    n = files[0]
     FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
     return contentJson(<<EOD)
-#{xmain cgip(:touch)}
+{
+  "main" : #{s2json xmain(cgip(:touch))},
+  "sub"  : #{s2json xsub(n)}
+}
 EOD
-#{xsub files[0]}
   end
 
   if cgip(:open)
