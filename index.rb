@@ -105,9 +105,9 @@ function ajaxPost(d, f) {
 }
 
 function touchItem(s) {
+  removeItem($('#'+s)[0]);
+  removeItem($('.item.main')[0]);
   ajaxPost({touch:s}, function(data, dataType) {
-    removeItem($('#'+s)[0]);
-    removeItem($('.item.main')[0]);
     prependItem($(data.sub)[0]);
     prependItem($(data.main)[0]);
   });
@@ -226,7 +226,7 @@ EOD
   txt = open("d/"+s){|f|f.read}
   <<EOD
 <div id="#{s}" class="item main"> #{itemMenu(0)}
-<h1>#{t}</h1>
+<h1 class="word">#{t}</h1>
 #{s2view txt}
 <h2>Link</h2> 検索結果的なの
 </div>
@@ -240,7 +240,7 @@ def xsub(t)
   txt = open("d/"+s){|f|f.read}
   <<EOD
 <div id="#{s}" class="item sub"> #{itemMenu(0)}
-<h1><a href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
+<h1><a class="word" href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
 #{s2view txt}
 <div>Read More...</div>
 </div>
@@ -256,12 +256,14 @@ end
 def main
 
   if cgip(:touch)
-    n = files[0]
-    FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
+    s = files[0]
+    m = cgip(:touch)
+    return "" if s == m
+    FileUtils.touch("d/#{CGI.escape m}")
     return contentJson(<<EOD)
 {
-  "main" : #{s2json xmain(cgip(:touch))},
-  "sub"  : #{s2json xsub(n)}
+  "main" : #{s2json xmain(m)},
+  "sub"  : #{s2json xsub(s)}
 }
 EOD
   end
