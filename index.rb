@@ -114,16 +114,25 @@ function touchItem(s) {
 }
 
 $(function(){
+  $("#word").keypress(function(e) {
+    if (e.which == 13) {
+      $("#word").val("");
+    }
+  });
+  $("#edit").click(function() {
+    $(".view").toggle();
+    $(".write").toggle(200, function() {
+      masonry.layout();
+    });
+    return false;
+  });
+  $(".write").hide();
+
   container = $(".masonry")[0];
   masonry = new Masonry(container, {
     itemSelector: '.item',
     columnWidth: 0,
     isFitWidth: true
-  });
-  $("#word").keypress(function(e) {
-    if (e.which == 13) {
-      $("#word").val("");
-    }
   });
 }); 
 
@@ -211,12 +220,6 @@ def s2view(s)
   }
 end
 
-def itemMenu(i)
-  <<EOD
-<div style="float:right;"> <a href="">[Edit]</a> </div>
-EOD
-end
-
 def xmain(t)
   return "" unless t
   s = CGI.escape(t)
@@ -225,10 +228,26 @@ dododo
 EOD
   txt = open("d/"+s){|f|f.read}
   <<EOD
-<div id="#{s}" class="item main"> #{itemMenu(0)}
+<div id="#{s}" class="item main">
+<div style="float:right;">
+  <a id="edit" href="#">[Edit]</a>
+</div>
 <h1 class="word">#{t}</h1>
+
+<div class="view">
 #{s2view txt}
+</div>
+
+<div class="write">
+<textarea id="txt">
+#{txt}
+</textarea>
+<input type="submit" id="write" value="Write"/>\
+<input type="submit" id="close" value="Close"/>
+</div>
+
 <h2>Link</h2> 検索結果的なの
+
 </div>
 EOD
 end
@@ -239,7 +258,11 @@ def xsub(t)
   return "" unless test('f', "d/"+s)
   txt = open("d/"+s){|f|f.read}
   <<EOD
-<div id="#{s}" class="item sub"> #{itemMenu(0)}
+<div id="#{s}" class="item sub">
+<div style="float:right;">
+  <a id="edit" href="#">[Edit]</a>
+</div>
+
 <h1><a class="word" href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
 #{s2view txt}
 <div>Read More...</div>
@@ -257,12 +280,11 @@ def main
 
   if cgip(:touch)
     s = files[0]
-    m = cgip(:touch)
-    return "" if s == m
-    FileUtils.touch("d/#{CGI.escape m}")
+    return "" if s == cgip(:touch)
+    FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
     return contentJson(<<EOD)
 {
-  "main" : #{s2json xmain(m)},
+  "main" : #{s2json xmain(cgip(:touch))},
   "sub"  : #{s2json xsub(s)}
 }
 EOD
@@ -314,20 +336,7 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
-
 #{allItems()}
-
-<!--
-<div class="item">
-#{itemMenu(0)}
-<h1>Main</h1>
-prepend の test を ... これまるっと作り変えて<br/>
-公式サイト参考に<br/>
-----<br/>
-Read More 的な<br/>
-<h2>Link</h2>
-検索結果的なの
-</div>
 <!-- ================================ -->
 </div>
 <!-- ================================== -->
