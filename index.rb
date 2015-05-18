@@ -103,16 +103,19 @@ function prependItem(v) {
   masonry.prepended(v);
 }
 
-function touchItem(s, f) {
+function touchItem(s, isEdit) {
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({touch:s}, function(data, dataType) {
+    var m = $(data.main);
+    if (isEdit) {
+      m.find(".view").hide();
+      m.find(".write").show();
+    }
     prependItem($(data.sub)[0]);
-    prependItem($(data.main)[0]);
-    if (f) f();
+    prependItem(m[0]);
   });
 }
-
 function mainEdit() {
   $(".view").toggle(200);
   $(".write").toggle(200, function() {
@@ -121,16 +124,27 @@ function mainEdit() {
   return false;
 }
 function subEdit(s) {
-  touchItem(s, function() {
-    mainEdit();
-  });
+  touchItem(s, true);
 }
+
+
+
+
+
+
+
+
 
 $(function(){
   $("#word").keypress(function(e) {
     if (e.which == 13) {
       $("#word").val("");
     }
+  });
+  shortcut.add("e",function() {
+    mainEdit();
+  },{
+    'disable_in_input':true
   });
   container = $(".masonry")[0];
   masonry = new Masonry(container, {
@@ -209,9 +223,8 @@ EOD
 
 <div class="view">
 #{s2view txt}
-</div>
-
 <h2>Link</h2> 検索結果的なの
+</div>
 
 </div>
 EOD
