@@ -88,20 +88,19 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
-function removeItem(v) {
-  masonry.remove(v);
-}
-function prependItem(v) {
-  container.insertBefore(v, container.firstChild);
-  masonry.prepended(v);
-}
-
 function ajaxPost(d, f) {
   $.ajax({
     type: "POST", scriptCharset: 'utf-8', dataType: "json", cache: false,
     url: "#{SCRIPT_NAME}", data: d, success: f,
     error: function(xhr, textStatus, errorThrown) { alert(textStatus); }
   });
+}
+function removeItem(v) {
+  masonry.remove(v);
+}
+function prependItem(v) {
+  container.insertBefore(v, container.firstChild);
+  masonry.prepended(v);
 }
 
 function touchItem(s) {
@@ -113,20 +112,20 @@ function touchItem(s) {
   });
 }
 
+function mainEdit() {
+  $(".view").toggle(200);
+  $(".write").toggle(200, function() {
+    masonry.layout();
+  });
+  return false;
+}
+
 $(function(){
   $("#word").keypress(function(e) {
     if (e.which == 13) {
       $("#word").val("");
     }
   });
-  $("#edit").click(function() {
-    $(".view").toggle();
-    $(".write").toggle(200, function() {
-      masonry.layout();
-    });
-    return false;
-  });
-  $(".write").hide();
 
   container = $(".masonry")[0];
   masonry = new Masonry(container, {
@@ -136,45 +135,6 @@ $(function(){
   });
 }); 
 
-/*================================================================
-var htmNew = ''+
-  '<div class="item">'+
-  '<textarea id="txt"></textarea><br/>'+
-  '<input type="submit" id="write" value="write" onClick="writeNewBox()"/>'+
-  '<input type="submit" id="close" value="close" onClick="closeNewBox()"/>'+
-  '</div>';
-var container = 0;
-var masonry = 0;
-var newBox = 0;
-
-function closeNewBox() {
-  if (masonry && newBox) {
-    masonry.remove(newBox);
-    masonry.layout();
-    newBox = 0;
-  }
-}
-function writeNewBox() {
-  if (masonry && newBox) {
-    closeNewBox();
-  }
-}
-  $("#new").click(function(e) {
-    if (newBox) {
-      closeNewBox();
-    } else {
-      newBox = $(htmNew).get(0);
-      container.insertBefore(newBox, container.firstChild);
-      masonry.prepended(newBox);
-    }
-  });
-  $("#search").keypress(function(e) {
-    if (e.which == 13) {
-      window.alert("aho");
-      $("#search").val("");
-    }
-  });
-*/
 //-->
 EOD
 
@@ -230,20 +190,20 @@ EOD
   <<EOD
 <div id="#{s}" class="item main">
 <div style="float:right;">
-  <a id="edit" href="#">[Edit]</a>
+  <a href="#" onclick="mainEdit()">[Edit]</a>
 </div>
 <h1 class="word">#{t}</h1>
 
-<div class="view">
-#{s2view txt}
-</div>
-
-<div class="write">
+<div class="write" style="display: none">
 <textarea id="txt">
 #{txt}
 </textarea>
 <input type="submit" id="write" value="Write"/>\
 <input type="submit" id="close" value="Close"/>
+</div>
+
+<div class="view">
+#{s2view txt}
 </div>
 
 <h2>Link</h2> 検索結果的なの
