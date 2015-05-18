@@ -121,7 +121,9 @@ function mainWrite(s) {
   var t = $("#txt").val();
   removeItem($('#'+s)[0]);
   ajaxPost({write:s, text:t}, function(data, dataType) {
-    prependItem($(data.main)[0]);
+    if (data.main) {
+      prependItem($(data.main)[0]);
+    }
   });
 }
 
@@ -201,7 +203,7 @@ EOD
 <div style="float:right;">
   <a href="#" onclick="mainEdit()">[Edit]</a>
 </div>
-<h1 class="word">#{t}</h1>
+<h1>#{t}</h1>
 
 <div class="write" style="display: none">
 <textarea id="txt">
@@ -231,7 +233,7 @@ def xsub(t)
   <a href="#" onclick="subEdit('#{s}')">[Edit]</a>
 </div>
 
-<h1><a class="word" href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
+<h1><a href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
 #{s2view txt}
 </div>
 EOD
@@ -257,7 +259,7 @@ EOD
   end
   if cgip(:write)
     n = "d/#{CGI.escape cgip(:write)}"
-    open(n,"w"){|f|f.write(cgip(:text))}
+    open(n,"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
   "main" : #{s2json xmain(cgip(:write))}
