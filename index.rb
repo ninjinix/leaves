@@ -42,17 +42,18 @@ html {-webkit-text-size-adjust:none;}
   font-family: Consolas, 'Courier New', Courier, Monaco, monospace;}
 body {margin: 0; padding: 0; background: #000 url(bg002.jpg) fixed;
   font-size: 12px; color: #ddd;}
-a {color: #8ac; text-decoration: none;}
+a {color: #79b; text-decoration: none;}
 p {padding: 0; margin: 1em 0;}
-h1 {font-weight: normal; margin: 0 0 0.5em 0; padding: 0;
-  border-bottom: dashed 1px #8ac; color: #8ac;}
-h2 {font-weight: normal; margin: 1em 0 0.5em 0; padding: 0;
-  border-bottom: dashed 1px #8ac; color: #8ac;}
+
+h1,h2 {font-weight: normal; margin: 0 0 0.5em 0; padding: 0;
+  border-bottom: dashed 1px #8ac; color: #222;}
+h2 {margin-top: 1em;}
+
 table {margin: 0em; border-collapse: collapse;}
 td {padding: 3px 6px; border: 1px solid #567;}
 
 #header {
-  background: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.85);
   margin-bottom: 5px;
   padding: 12px;
   color: #445;
@@ -61,12 +62,8 @@ td {padding: 3px 6px; border: 1px solid #567;}
   background: #fff; color: #444; border: 1px solid #aac;}
 
 .masonry {margin: 0 auto;}
-.item {border-radius: 5px; background-color: rgba(255,255,255,0.75);
-  margin: 5px; padding: 5px; width: 460px; color: #678;}
-
-.item.main {background-color: rgba(255,255,255,0.85);}
-.item.sub  {background-color: rgba(255,255,255,0.75);}
-.item.sub h1 {color: #8ac; border-color: #8ac;}
+.item {border-radius: 5px; background-color: rgba(255,255,255,0.85);
+  margin: 5px; padding: 5px; width: 460px; color: #222;}
 
 #txt {width: 98%; height: 25em; margin-bottom: 3px;
   background: rgba(0,0,0,0);
@@ -76,12 +73,6 @@ td {padding: 3px 6px; border: 1px solid #567;}
 
 -->
 EOD
-
-# <div class="item">
-# <h1>Main</h1>
-# <textarea id="txt"></textarea><br/>
-# <input type="submit" id="write" value="write" onClick="writeItem()"/>
-# </div>
 
 SCRIPT = <<EOD
 <!--
@@ -242,7 +233,6 @@ def xsub(t)
 
 <h1><a class="word" href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
 #{s2view txt}
-<div>Read More...</div>
 </div>
 EOD
 end
