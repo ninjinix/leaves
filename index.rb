@@ -126,14 +126,13 @@ function mainEdit() {
 function subEdit(s) {
   touchItem(s, true);
 }
-
-
-
-
-
-
-
-
+function mainWrite(s) {
+  var t = $("#txt").val();
+  removeItem($('#'+s)[0]);
+  ajaxPost({write:s, text:t}, function(data, dataType) {
+    prependItem($(data.main)[0]);
+  });
+}
 
 $(function(){
   $("#word").keypress(function(e) {
@@ -217,7 +216,7 @@ EOD
 <textarea id="txt">
 #{txt}
 </textarea>
-<input type="submit" id="write" value="Write"/>\
+<input type="submit" id="write" value="Write" onClick="mainWrite('#{s}')"/>\
 <input type="submit" id="close" value="Close" onclick="mainEdit()"/>
 </div>
 
@@ -255,7 +254,6 @@ def allItems()
 end
 
 def main
-
   if cgip(:touch)
     s = files[0]
     return "" if s == cgip(:touch)
@@ -267,20 +265,15 @@ def main
 }
 EOD
   end
-
-  if cgip(:open)
-  end
-  if cgip(:close)
-  end
-  if cgip(:html)
-  end
-  if cgip(:text)
-  end
   if cgip(:write)
+    n = "d/#{CGI.escape cgip(:write)}"
+    open(n,"w"){|f|f.write(cgip(:text))}
+    return contentJson(<<EOD)
+{
+  "main" : #{s2json xmain(cgip(:write))}
+}
+EOD
   end
-  if cgip(:search)
-  end
-
   return <<EOD
 Content-type: text/html; charset=utf-8
 
