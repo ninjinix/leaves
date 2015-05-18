@@ -45,9 +45,9 @@ body {margin: 0; padding: 0; background: #000 url(bg002.jpg) fixed;
 a {color: #8ac; text-decoration: none;}
 p {padding: 0; margin: 1em 0;}
 h1 {font-weight: normal; margin: 0 0 0.5em 0; padding: 0;
-  border-bottom: dashed 1px #135; color: #135;}
+  border-bottom: dashed 1px #8ac; color: #8ac;}
 h2 {font-weight: normal; margin: 1em 0 0.5em 0; padding: 0;
-  border-bottom: dashed 1px #135; color: #135;}
+  border-bottom: dashed 1px #8ac; color: #8ac;}
 table {margin: 0em; border-collapse: collapse;}
 td {padding: 3px 6px; border: 1px solid #567;}
 
@@ -62,10 +62,10 @@ td {padding: 3px 6px; border: 1px solid #567;}
 
 .masonry {margin: 0 auto;}
 .item {border-radius: 5px; background-color: rgba(255,255,255,0.75);
-  margin: 5px; padding: 5px; width: 460px; color: #222;}
+  margin: 5px; padding: 5px; width: 460px; color: #678;}
 
 .item.main {background-color: rgba(255,255,255,0.85);}
-.item.sub  {background-color: rgba(255,255,255,0.75); color: #579;}
+.item.sub  {background-color: rgba(255,255,255,0.75);}
 .item.sub h1 {color: #8ac; border-color: #8ac;}
 
 #txt {width: 98%; height: 25em; margin-bottom: 3px;
@@ -103,12 +103,13 @@ function prependItem(v) {
   masonry.prepended(v);
 }
 
-function touchItem(s) {
+function touchItem(s, f) {
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({touch:s}, function(data, dataType) {
     prependItem($(data.sub)[0]);
     prependItem($(data.main)[0]);
+    if (f) f();
   });
 }
 
@@ -119,6 +120,11 @@ function mainEdit() {
   });
   return false;
 }
+function subEdit(s) {
+  touchItem(s, function() {
+    mainEdit();
+  });
+}
 
 $(function(){
   $("#word").keypress(function(e) {
@@ -126,7 +132,6 @@ $(function(){
       $("#word").val("");
     }
   });
-
   container = $(".masonry")[0];
   masonry = new Masonry(container, {
     itemSelector: '.item',
@@ -199,7 +204,7 @@ EOD
 #{txt}
 </textarea>
 <input type="submit" id="write" value="Write"/>\
-<input type="submit" id="close" value="Close"/>
+<input type="submit" id="close" value="Close" onclick="mainEdit()"/>
 </div>
 
 <div class="view">
@@ -220,7 +225,7 @@ def xsub(t)
   <<EOD
 <div id="#{s}" class="item sub">
 <div style="float:right;">
-  <a id="edit" href="#">[Edit]</a>
+  <a href="#" onclick="subEdit('#{s}')">[Edit]</a>
 </div>
 
 <h1><a class="word" href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
