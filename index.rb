@@ -42,7 +42,7 @@ html {-webkit-text-size-adjust:none;}
   font-family: Consolas, 'Courier New', Courier, Monaco, monospace;}
 body {margin: 0; padding: 0; background: #000 url(bg002.jpg) fixed;
   font-size: 12px; color: #ddd;}
-a {color: #79b; text-decoration: none;}
+a {color: #68a; text-decoration: none;}
 p {padding: 0; margin: 1em 0;}
 
 h1,h2 {font-weight: normal; margin: 0 0 0.5em 0; padding: 0;
@@ -50,7 +50,7 @@ h1,h2 {font-weight: normal; margin: 0 0 0.5em 0; padding: 0;
 h2 {margin-top: 1em;}
 
 table {margin: 0em; border-collapse: collapse;}
-td {padding: 3px 6px; border: 1px solid #567;}
+td {padding: 3px 6px; border: 1px solid #9ab;}
 
 #header {
   background: rgba(255,255,255,0.85);
@@ -123,6 +123,8 @@ function mainWrite(s) {
   ajaxPost({write:s, text:t}, function(data, dataType) {
     if (data.main) {
       prependItem($(data.main)[0]);
+    } else {
+      masonry.layout();
     }
   });
 }
@@ -193,10 +195,15 @@ def s2view(s)
 end
 
 def xmain(t)
-  return "" unless t
   s = CGI.escape(t)
   return <<EOD unless test('f', "d/"+s)
-dododo
+<div id="#{s}" class="item main">
+<h1>#{t}</h1>
+<div class="write">
+  <textarea id="txt"></textarea>
+  <input type="submit" id="write" value="Write" onClick="mainWrite('#{s}')"/>
+</div>
+</div>
 EOD
   txt = open("d/"+s){|f|f.read}
   <<EOD
@@ -224,7 +231,6 @@ EOD
 end
 
 def xsub(t)
-  return "" unless t
   s = CGI.escape(t)
   return "" unless test('f', "d/"+s)
   txt = open("d/"+s){|f|f.read}
@@ -250,7 +256,8 @@ def main
   if cgip(:touch)
     s = files[0]
     return "" if s == cgip(:touch)
-    FileUtils.touch("d/#{CGI.escape cgip(:touch)}")
+    n = "d/#{CGI.escape cgip(:touch)}"
+    FileUtils.touch(n) if test('f', n)
     return contentJson(<<EOD)
 {
   "main" : #{s2json xmain(cgip(:touch))},
@@ -260,6 +267,10 @@ EOD
   end
   if cgip(:write)
     n = "d/#{CGI.escape cgip(:write)}"
+    if cgip(:text) == ""
+      File.unlink(n) if test('f',n)
+      return contentJson('{}')
+    end
     open(n,"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
