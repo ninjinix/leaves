@@ -31,10 +31,9 @@ def s2json(s)
 end
 
 SCRIPT_NAME = File.basename(icgi.script_name)
-
 #================================================================
 SITE_NAME = 'Masonry Cloud'
-
+#----------------------------------------------------------------
 CSS = <<EOD
 <!--
 html {-webkit-text-size-adjust:none;}
@@ -73,7 +72,7 @@ td {padding: 3px 6px; border: 1px solid #9ab;}
 
 -->
 EOD
-
+#----------------------------------------------------------------
 SCRIPT = <<EOD
 <!--
 var container = 0;
@@ -97,7 +96,7 @@ function prependItem(v) {
 function touchItem(s, isEdit) {
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
-  ajaxPost({touch:s}, function(data, dataType) {
+  ajaxPost({_touch:s}, function(data, dataType) {
     var m = $(data.main);
     if (isEdit) {
       m.find(".view").hide();
@@ -120,12 +119,15 @@ function subEdit(s) {
 function mainWrite(s) {
   var t = $("#txt").val();
   removeItem($('#'+s)[0]);
-  ajaxPost({write:s, text:t}, function(data, dataType) {
-    if (data.main) {
+  if (t == "") {
+    ajaxPost({_delete:s}, function(data, dataType) {
+      removeItem($('#'+data.sub)[0]);
       prependItem($(data.main)[0]);
-    } else {
-      masonry.layout();
-    }
+    });
+    return;
+  }
+  ajaxPost({_write:s, text:t}, function(data, dataType) {
+    prependItem($(data.main)[0]);
   });
 }
 
@@ -151,7 +153,7 @@ $(function(){
 
 //-->
 EOD
-
+#================================================================
 def files
   $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.
     map{|i| CGI.unescape(File.basename(i))}
@@ -246,38 +248,52 @@ def xsub(t)
 EOD
 end
 
-def allItems()
+def xall()
   a = [xmain(files[0])]
   (1 .. files.size-1).each{|i| a.push xsub(files[i])}
   a.join
 end
 
+#================================================================
 def main
-  if cgip(:touch)
+#----------------------------------------------------------------
+  if cgip(:_touch)
     s = files[0]
-    return "" if s == cgip(:touch)
-    n = "d/#{CGI.escape cgip(:touch)}"
+    return "" if s == cgip(:_touch)
+    n = "d/#{CGI.escape cgip(:_touch)}"
     FileUtils.touch(n) if test('f', n)
     return contentJson(<<EOD)
 {
-  "main" : #{s2json xmain(cgip(:touch))},
+  "main" : #{s2json xmain(cgip(:_touch))},
   "sub"  : #{s2json xsub(s)}
 }
 EOD
   end
-  if cgip(:write)
-    n = "d/#{CGI.escape cgip(:write)}"
-    if cgip(:text) == ""
-      File.unlink(n) if test('f',n)
-      return contentJson('{}')
-    end
+#----------------------------------------------------------------
+  if cgip(:_write)
+    n = "d/#{CGI.escape cgip(:_write)}"
     open(n,"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
-  "main" : #{s2json xmain(cgip(:write))}
+  "main" : #{s2json xmain(cgip(:_write))}
 }
 EOD
   end
+#----------------------------------------------------------------
+  if cgip(:_delete)
+    m = files[1]
+    s = "d/#{CGI.escape cgip(:_delete)}"
+    File.unlink(s) if test('f', s)
+    n = "d/#{CGI.escape m}"
+    FileUtils.touch(n) if test('f', n)
+    return contentJson(<<EOD)
+{
+  "main" : #{s2json xmain(m)},
+  "sub"  : #{s2json m}
+}
+EOD
+  end
+#----------------------------------------------------------------
   return <<EOD
 Content-type: text/html; charset=utf-8
 
@@ -311,7 +327,7 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
-#{allItems()}
+#{xall()}
 <!-- ================================ -->
 </div>
 <!-- ================================== -->
@@ -319,5 +335,5 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 </html>
 EOD
 end
-
+#================================================================
 puts main
