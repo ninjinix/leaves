@@ -94,6 +94,9 @@ function prependItem(v) {
 }
 
 function touchItem(s, isEdit) {
+
+  // s == main だったらどうすべき？
+
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
@@ -195,6 +198,22 @@ def s2view(s)
   }
 end
 
+def xword(t)
+  s = ['<p>']
+  files.each do |i|
+    s << link_self(i) + '<br/>' if i =~ /#{t}/ && i != t
+  end
+  s << '</p>'
+  files.each do |i|
+    d = open("d/#{CGI.escape i}"){|f|f.read}
+    n = d.scan(/^.*#{t}.*$/)
+    if 0 < n.size
+      s << "<p>#{esc('>>')} #{link_self(i)}<br/>#{s2view(n.join("\n"))}</p>"
+    end
+  end
+  return s.join
+end
+
 def xmain(t)
   s = CGI.escape(t)
   return <<EOD unless test('f', "d/"+s)
@@ -224,7 +243,8 @@ EOD
 
 <div class="view">
 #{s2view txt}
-<h2>Link</h2> 検索結果的なの
+<h2>Link</h2>
+#{xword t}
 </div>
 
 </div>
