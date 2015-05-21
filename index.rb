@@ -118,7 +118,7 @@ function subEdit(s) {
 }
 function mainWrite(s) {
   var t = $("#txt").val();
-  removeItem($('#'+s)[0]);
+  removeItem($('.item.main')[0]);
   if (t == "") {
     ajaxPost({_delete:s}, function(data, dataType) {
       removeItem($('#'+data.sub)[0]);
@@ -160,8 +160,7 @@ def files
 end
 
 def link_self(s,c='nop')
-  %|<a class="#{c}" href="#{SCRIPT_NAME}#{
-    s == 'FrontPage' ? nil : '?' + esc(CGI.escape(s))}">#{esc(s)}</a>|
+  %|<a class="#{c}" href="#" onclick="touchItem('#{s}')">#{esc s}</a>|
 end
 
 def s2view(s)
@@ -242,7 +241,7 @@ def xsub(t)
   <a href="#" onclick="subEdit('#{s}')">[Edit]</a>
 </div>
 
-<h1><a href="#" onclick="touchItem('#{s}')">#{t}</a></h1>
+<h1>#{link_self(t)}</h1>
 #{s2view txt}
 </div>
 EOD
@@ -281,15 +280,13 @@ EOD
   end
 #----------------------------------------------------------------
   if cgip(:_delete)
-    m = files[1]
     s = "d/#{CGI.escape cgip(:_delete)}"
     File.unlink(s) if test('f', s)
-    n = "d/#{CGI.escape m}"
-    FileUtils.touch(n) if test('f', n)
+    s = files[0]
     return contentJson(<<EOD)
 {
-  "main" : #{s2json xmain(m)},
-  "sub"  : #{s2json m}
+  "main" : #{s2json xmain(s)},
+  "sub"  : #{s2json s}
 }
 EOD
   end
