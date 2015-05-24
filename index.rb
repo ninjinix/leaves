@@ -94,9 +94,6 @@ function prependItem(v) {
 }
 
 function touchItem(s, isEdit) {
-
-  // s == main だったらどうすべき？
-
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
@@ -123,8 +120,8 @@ function mainWrite(s) {
   var t = $("#txt").val();
   removeItem($('.item.main')[0]);
   if (t == "") {
+    removeItem($('.sub:first')[0]);
     ajaxPost({_delete:s}, function(data, dataType) {
-      removeItem($('#'+data.sub)[0]);
       prependItem($(data.main)[0]);
     });
     return;
@@ -163,6 +160,7 @@ def files
 end
 
 def link_self(s,c='nop')
+  return s if files[0] == s
   %|<a class="#{c}" href="#" onclick="touchItem('#{s}')">#{esc s}</a>|
 end
 
@@ -198,7 +196,7 @@ def s2view(s)
   }
 end
 
-def xword(t)
+def xlink(t)
   s = ['<p>']
   files.each do |i|
     s << link_self(i) + '<br/>' if i =~ /#{t}/ && i != t
@@ -244,7 +242,7 @@ EOD
 <div class="view">
 #{s2view txt}
 <h2>Link</h2>
-#{xword t}
+#{xlink t}
 </div>
 
 </div>
