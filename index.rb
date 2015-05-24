@@ -78,6 +78,13 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
+function esc(s) {
+  s = s.replace(/"/, '\"');
+  s = s.replace(/'/, "\'");
+  s = s.replace(/</, '&lt;');
+  s = s.replace(/>/, '&gt;');
+  return s;
+}
 function ajaxPost(d, f) {
   $.ajax({
     type: "POST", scriptCharset: 'utf-8', dataType: "json", cache: false,
@@ -94,6 +101,9 @@ function prependItem(v) {
 }
 
 function touchItem(s, isEdit) {
+
+  s = esc(s);
+
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
@@ -288,7 +298,8 @@ EOD
   end
 #----------------------------------------------------------------
   if cgip(:_write)
-    n = "d/#{CGI.escape cgip(:_write)}"
+#   n = "d/#{CGI.escape cgip(:_write)}"
+    n = "d/#{cgip(:_write)}"
     open(n,"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
