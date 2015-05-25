@@ -79,10 +79,10 @@ var container = 0;
 var masonry = 0;
 
 function esc(s) {
-  s = s.replace(/"/, '\"');
-  s = s.replace(/'/, "\'");
-  s = s.replace(/</, '&lt;');
-  s = s.replace(/>/, '&gt;');
+  s = s.replace(/"/, '\\"');
+  s = s.replace(/'/, "\\'");
+  s = s.replace(/</, '\\<');
+  s = s.replace(/>/, '\\>');
   return s;
 }
 function ajaxPost(d, f) {
@@ -101,9 +101,7 @@ function prependItem(v) {
 }
 
 function touchItem(s, isEdit) {
-
   s = esc(s);
-
   removeItem($('#'+s)[0]);
   removeItem($('.item.main')[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
@@ -164,14 +162,15 @@ $(function(){
 //-->
 EOD
 #================================================================
-def files
-  $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.
-    map{|i| CGI.unescape(File.basename(i))}
+def files(f=false)
+  $files = nil if f
+  $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.map{|i|
+    CGI.unescape(File.basename(i))}
 end
 
 def link_self(s,c='nop')
   return s if files[0] == s
-  %|<a class="#{c}" href="#" onclick="touchItem('#{s}')">#{esc s}</a>|
+  %|<a class="#{c}" href="#" onclick="touchItem('#{s}')">#{s}</a>|
 end
 
 def s2view(s)
@@ -225,17 +224,17 @@ end
 def xmain(t)
   s = CGI.escape(t)
   return <<EOD unless test('f', "d/"+s)
-<div id="#{s}" class="item main">
+<div id="#{t}" class="item main">
 <h1>#{t}</h1>
 <div class="write">
   <textarea id="txt"></textarea>
-  <input type="submit" id="write" value="Write" onClick="mainWrite('#{s}')"/>
+  <input type="submit" id="write" value="Write" onClick="mainWrite('#{t}')"/>
 </div>
 </div>
 EOD
   txt = open("d/"+s){|f|f.read}
   <<EOD
-<div id="#{s}" class="item main">
+<div id="#{t}" class="item main">
 <div style="float:right;">
   <a href="#" onclick="mainEdit()">[Edit]</a>
 </div>
@@ -245,7 +244,7 @@ EOD
 <textarea id="txt">
 #{txt}
 </textarea>
-<input type="submit" id="write" value="Write" onClick="mainWrite('#{s}')"/>\
+<input type="submit" id="write" value="Write" onClick="mainWrite('#{t}')"/>\
 <input type="submit" id="close" value="Close" onclick="mainEdit()"/>
 </div>
 
@@ -260,15 +259,14 @@ EOD
 end
 
 def xsub(t)
-  s = CGI.escape(t)
-  return "" unless test('f', "d/"+s)
-  txt = open("d/"+s){|f|f.read}
+  n = "d/#{CGI.escape t}"
+  return "" unless test('f', n)
+  txt = open(n){|f|f.read}
   <<EOD
-<div id="#{s}" class="item sub">
+<div id="#{t}" class="item sub">
 <div style="float:right;">
-  <a href="#" onclick="subEdit('#{s}')">[Edit]</a>
+  <a href="#" onclick="subEdit('#{t}')">[Edit]</a>
 </div>
-
 <h1>#{link_self(t)}</h1>
 #{s2view txt}
 </div>
@@ -289,6 +287,7 @@ def main
     return "" if s == cgip(:_touch)
     n = "d/#{CGI.escape cgip(:_touch)}"
     FileUtils.touch(n) if test('f', n)
+    files(true)
     return contentJson(<<EOD)
 {
   "main" : #{s2json xmain(cgip(:_touch))},
@@ -298,8 +297,7 @@ EOD
   end
 #----------------------------------------------------------------
   if cgip(:_write)
-#   n = "d/#{CGI.escape cgip(:_write)}"
-    n = "d/#{cgip(:_write)}"
+    n = "d/#{CGI.escape cgip(:_write)}"
     open(n,"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
@@ -311,7 +309,7 @@ EOD
   if cgip(:_delete)
     s = "d/#{CGI.escape cgip(:_delete)}"
     File.unlink(s) if test('f', s)
-    s = files[0]
+    s = files(true)[0]
     return contentJson(<<EOD)
 {
   "main" : #{s2json xmain(s)},
