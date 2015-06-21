@@ -79,10 +79,14 @@ var container = 0;
 var masonry = 0;
 
 function esc(s) {
-  s = s.replace(/"/, '\\"');
-  s = s.replace(/'/, "\\'");
-  s = s.replace(/</, '\\<');
-  s = s.replace(/>/, '\\>');
+  
+// http://www.xml.vc/kiso/taisyou/class-id.html
+
+  s = s.replace(/"/g, '');
+  s = s.replace(/'/g, '');
+  s = s.replace(/</g, '');
+  s = s.replace(/>/g, '');
+  s = s.replace(/:/g, '');
   return s;
 }
 function ajaxPost(d, f) {
