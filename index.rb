@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 require 'cgi'
 require 'fileutils'
+require 'base64'
 #================================================================
 def icgi
   $cgi ||= CGI.new
@@ -79,9 +80,6 @@ var container = 0;
 var masonry = 0;
 
 function esc(s) {
-  
-// http://www.xml.vc/kiso/taisyou/class-id.html
-
   s = s.replace(/"/g, '');
   s = s.replace(/'/g, '');
   s = s.replace(/</g, '');
@@ -100,6 +98,7 @@ function removeItem(v) {
   masonry.remove(v);
 }
 function prependItem(v) {
+  if (v == null) return;
   container.insertBefore(v, container.firstChild);
   masonry.prepended(v);
 }
@@ -263,6 +262,7 @@ EOD
 end
 
 def xsub(t)
+  return '' unless t
   n = "d/#{CGI.escape t}"
   return "" unless test('f', n)
   txt = open(n){|f|f.read}
@@ -278,6 +278,7 @@ EOD
 end
 
 def xall()
+  return '' if files.size < 1
   a = [xmain(files[0])]
   (1 .. files.size-1).each{|i| a.push xsub(files[i])}
   a.join
@@ -341,6 +342,7 @@ Content-type: text/html; charset=utf-8
   <script type="text/javascript" src="./jquery-2.1.3.min.js"></script>
   <script type="text/javascript" src="./shortcut.js"></script>
   <script type="text/javascript" src="./masonry.pkgd.min.js"></script>
+  <script type="text/javascript" src="./base64.min.js"></script>
 </head>
 <style type="text/css">#{CSS}</style>
 <script type="text/javascript">#{SCRIPT}</script>
@@ -355,6 +357,9 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
+
+ENCODE / DECODE TEST
+
 #{xall()}
 <!-- ================================ -->
 </div>
