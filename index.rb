@@ -19,6 +19,16 @@ def unesc(s)
   s ? CGI.unescapeHTML(s) : nil
 end
 
+def to64(s)
+  encode64(s).gsub(/=+$/, '').gsub("\n", '').
+    gsub('+', '-').gsub('/', '_')
+end
+
+def from64(s)
+  s += '=' while s.size % 4 != 0
+  decode64(s.gsub('-', '+').gsub('_', '/'))
+end
+
 def contentText(s)
   "Content-type: text/plean; charset=utf-8\n\n"+s
 end
@@ -79,14 +89,6 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
-function esc(s) {
-  s = s.replace(/"/g, '');
-  s = s.replace(/'/g, '');
-  s = s.replace(/</g, '');
-  s = s.replace(/>/g, '');
-  s = s.replace(/:/g, '');
-  return s;
-}
 function ajaxPost(d, f) {
   $.ajax({
     type: "POST", scriptCharset: 'utf-8', dataType: "json", cache: false,
@@ -94,63 +96,14 @@ function ajaxPost(d, f) {
     error: function(xhr, textStatus, errorThrown) { alert(textStatus); }
   });
 }
-function removeItem(v) {
-  masonry.remove(v);
-}
-function prependItem(v) {
-  if (v == null) return;
-  container.insertBefore(v, container.firstChild);
-  masonry.prepended(v);
-}
-
-function touchItem(s, isEdit) {
-  s = esc(s);
-  removeItem($('#'+s)[0]);
-  removeItem($('.item.main')[0]);
-  ajaxPost({_touch:s}, function(data, dataType) {
-    var m = $(data.main);
-    if (isEdit) {
-      m.find(".view").hide();
-      m.find(".write").show();
-    }
-    prependItem($(data.sub)[0]);
-    prependItem(m[0]);
-  });
-}
-function mainEdit() {
-  $(".view").toggle(200);
-  $(".write").toggle(200, function() {
-    masonry.layout();
-  });
-  return false;
-}
-function subEdit(s) {
-  touchItem(s, true);
-}
-function mainWrite(s) {
-  var t = $("#txt").val();
-  removeItem($('.item.main')[0]);
-  if (t == "") {
-    removeItem($('.sub:first')[0]);
-    ajaxPost({_delete:s}, function(data, dataType) {
-      prependItem($(data.main)[0]);
-    });
-    return;
-  }
-  ajaxPost({_write:s, text:t}, function(data, dataType) {
-    prependItem($(data.main)[0]);
-  });
-}
 
 $(function(){
   $("#word").keypress(function(e) {
     if (e.which == 13) {
-      touchItem($("#word").val());
       $("#word").val("");
     }
   });
   shortcut.add("e",function() {
-    mainEdit();
   },{
     'disable_in_input':true
   });
@@ -284,56 +237,9 @@ def xall()
   a.join
 end
 
-#----------------------------------------------------------------
-
-def to64(s)
-  encode64(s).gsub(/=+$/, '').gsub("\n", '').
-    gsub('+', '-').gsub('/', '_')
-end
-
-def from64(s)
-  s += '=' while s.size % 4 != 0
-  decode64(s.gsub('-', '+').gsub('_', '/'))
-end
-
 #================================================================
 def main
 #----------------------------------------------------------------
-  if cgip(:_touch)
-    s = files[0]
-    return "" if s == cgip(:_touch)
-    n = "d/#{CGI.escape cgip(:_touch)}"
-    FileUtils.touch(n) if test('f', n)
-    files(true)
-    return contentJson(<<EOD)
-{
-  "main" : #{s2json xmain(cgip(:_touch))},
-  "sub"  : #{s2json xsub(s)}
-}
-EOD
-  end
-#----------------------------------------------------------------
-  if cgip(:_write)
-    n = "d/#{CGI.escape cgip(:_write)}"
-    open(n,"w"){|f|f.write(cgip(:text).chomp)}
-    return contentJson(<<EOD)
-{
-  "main" : #{s2json xmain(cgip(:_write))}
-}
-EOD
-  end
-#----------------------------------------------------------------
-  if cgip(:_delete)
-    s = "d/#{CGI.escape cgip(:_delete)}"
-    File.unlink(s) if test('f', s)
-    s = files(true)[0]
-    return contentJson(<<EOD)
-{
-  "main" : #{s2json xmain(s)},
-  "sub"  : #{s2json s}
-}
-EOD
-  end
 #----------------------------------------------------------------
   return <<EOD
 Content-type: text/html; charset=utf-8
@@ -369,28 +275,6 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
-
-ENCODE / DECODE TEST
-
-<p>test : #{from64 to64 "ただ彼の掌てのひらに載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始みはじめであろう。この時妙なものだと思った感じが今でも残っている。第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶やかんだ。その後ご猫にもだいぶ逢あったがこんな片輪かたわには一度も出会でくわした事がない。のみならず顔の真中があまりに突起している。そうしてその穴の中から時々ぷうぷうと煙けむりを吹く。どうも咽むせぽくて実に弱った。これが人間の飲む煙草たばこというものである事はようやくこの頃知った。"}</p>
-
-<p>to64 : #{to64 "ただ彼の掌てのひらに載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始みはじめであろう。この時妙なものだと思った感じが今でも残っている。第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶やかんだ。その後ご猫にもだいぶ逢あったがこんな片輪かたわには一度も出会でくわした事がない。のみならず顔の真中があまりに突起している。そうしてその穴の中から時々ぷうぷうと煙けむりを吹く。どうも咽むせぽくて実に弱った。これが人間の飲む煙草たばこというものである事はようやくこの頃知った。"}</p>
-
-<p>from64 : #{from64("44Gp44GT44Gn55Sf44KM44Gf44GL44Go44KT44Go6KaL5b2T44GR44KT44Go 44GG44GM44Gk44GL44Gs44CC5L2V44Gn44KC6JaE5pqX44GE44GY44KB44GY 44KB44GX44Gf5omA44Gn44OL44Oj44O844OL44Oj44O85rOj44GE44Gm44GE 44Gf5LqL44Gg44GR44Gv6KiY5oa244GX44Gm44GE44KL44CC")}</p>
-
-<p>from64 : #{from64("44Gp44GT44Gn55Sf44KM44Gf44GL44Go44KT44Go6KaL5b2T44GR44KT44Go44GG44GM44Gk44GL44Gs44CC5L2V44Gn44KC6JaE5pqX44GE44GY44KB44GY44KB44GX44Gf5omA44Gn44OL44Oj44O844OL44Oj44O85rOj44GE44Gm44GE44Gf5LqL44Gg44GR44Gv6KiY5oa244GX44Gm44GE44KL44CC")}</p>
-
-<p>to64 : #{to64("hoho")}</p>
-<p>to64 : #{to64("hoho0")}</p>
-<p>from64 : #{from64("aG9obw==")}</p>
-<p>from64 : #{from64("aG9obw")}</p>
-<p>from64 : #{from64("aG9obzA")}</p>
-<p>#{encode64("hoho")}</p>
-<p>#{decode64("aG9obw==")}</p>
-<p>#{decode64("aG9obw")}</p>
-
-
-
 #{xall()}
 <!-- ================================ -->
 </div>
