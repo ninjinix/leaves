@@ -89,6 +89,12 @@ SCRIPT = <<EOD
 var container = 0;
 var masonry = 0;
 
+function to64(s) {
+  return Base64.encodeURI(s);
+}
+function from64(s) {
+  return Base64.decode(s);
+}
 function ajaxPost(d, f) {
   $.ajax({
     type: "POST", scriptCharset: 'utf-8', dataType: "json", cache: false,
@@ -96,8 +102,56 @@ function ajaxPost(d, f) {
     error: function(xhr, textStatus, errorThrown) { alert(textStatus); }
   });
 }
+function removeItem(v) {
+  if (v == null) return;
+  masonry.remove(v);
+}
+function prependItem(v) {
+  if (v == null) return;
+  container.insertBefore(v, container.firstChild);
+  masonry.prepended(v);
+}
+
+function touchItem(s, isEdit) {
+  removeItem($('.item.main')[0]);
+  removeItem($('#'+to64(s))[0]);
+  ajaxPost({_touch:s}, function(data, dataType) {
+    var v = $(data.main);
+    if (isEdit) {
+      v.find(".view").hide();
+      v.find(".write").show();
+    }
+    prependItem($(data.sub)[0]);
+    prependItem(v[0]);
+  });
+}
+function mainEdit() {
+  $(".view").toggle(200);
+  $(".write").toggle(200, function() {
+    masonry.layout();
+  });
+  return false;
+}
+function subEdit(s) {
+  touchItem(s, true);
+}
+
+
+
+
+
+
+
 
 $(function(){
+  
+  if ($(".aaa").length) {
+    $(".aaa").html(
+      to64("int main(void) <>?g<>?"));
+  }
+  
+  
+  
   $("#word").keypress(function(e) {
     if (e.which == 13) {
       $("#word").val("");
@@ -275,6 +329,10 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
+
+<div class="aaa"></div>
+
+
 #{xall()}
 <!-- ================================ -->
 </div>
