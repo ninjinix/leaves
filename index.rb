@@ -114,7 +114,7 @@ function prependItem(v) {
 
 function touchItem(s, isEdit) {
   removeItem($('.item.main')[0]);
-  removeItem($('#'+to64(s))[0]);
+  removeItem($('#item_'+to64(s))[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
     var v = $(data.main);
     if (isEdit) {
@@ -135,29 +135,29 @@ function mainEdit() {
 function subEdit(s) {
   touchItem(s, true);
 }
-
-
-
-
-
-
-
-
-$(function(){
-  
-  if ($(".aaa").length) {
-    $(".aaa").html(
-      to64("int main(void) <>?g<>?"));
+function mainWrite(s) {
+  var t = $("#txt").val();
+  removeItem($('.item.main')[0]);
+  if (t == "") {
+    removeItem($('.sub:first')[0]);
+    ajaxPost({_delete:s}, function(data, dataType) {
+      prependItem($(data.main)[0]);
+    });
+    return;
   }
-  
-  
-  
+  ajaxPost({_write:s, text:t}, function(data, dataType) {
+    prependItem($(data.main)[0]);
+  });
+}
+$(function(){
   $("#word").keypress(function(e) {
     if (e.which == 13) {
+      touchItem($("#word").val());
       $("#word").val("");
     }
   });
   shortcut.add("e",function() {
+    mainEdit();
   },{
     'disable_in_input':true
   });
@@ -175,7 +175,7 @@ EOD
 def files(f=false)
   $files = nil if f
   $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.map{|i|
-    CGI.unescape(File.basename(i))}
+    from64 File.basename(i)}
 end
 
 def link_self(s,c='nop')
@@ -222,7 +222,7 @@ def xlink(t)
   end
   s << '</p>'
   files.each do |i|
-    d = open("d/#{CGI.escape i}"){|f|f.read}
+    d = open("d/#{to64 i}"){|f|f.read}
     n = d.scan(/^.*#{t}.*$/)
     if 0 < n.size
       s << "<p>#{esc('>>')} #{link_self(i)}<br/>#{s2view(n.join("\n"))}</p>"
@@ -232,9 +232,8 @@ def xlink(t)
 end
 
 def xmain(t)
-  s = CGI.escape(t)
-  return <<EOD unless test('f', "d/"+s)
-<div id="#{t}" class="item main">
+  return <<EOD unless test('f', "d/"+to64(t))
+<div id="item_#{to64 t}" class="item main">
 <h1>#{t}</h1>
 <div class="write">
   <textarea id="txt"></textarea>
@@ -242,9 +241,9 @@ def xmain(t)
 </div>
 </div>
 EOD
-  txt = open("d/"+s){|f|f.read}
+  txt = open("d/"+to64(t)){|f|f.read}
   <<EOD
-<div id="#{t}" class="item main">
+<div id="item_#{to64 t}" class="item main">
 <div style="float:right;">
   <a href="#" onclick="mainEdit()">[Edit]</a>
 </div>
@@ -270,11 +269,11 @@ end
 
 def xsub(t)
   return '' unless t
-  n = "d/#{CGI.escape t}"
+  n = "d/#{to64 t}"
   return "" unless test('f', n)
   txt = open(n){|f|f.read}
   <<EOD
-<div id="#{t}" class="item sub">
+<div id="item_#{to64 t}" class="item sub">
 <div style="float:right;">
   <a href="#" onclick="subEdit('#{t}')">[Edit]</a>
 </div>
@@ -294,6 +293,41 @@ end
 #================================================================
 def main
 #----------------------------------------------------------------
+  if cgip(:_touch)
+    s = files[0]
+    return "" if s == cgip(:_touch)
+    n = "d/#{to64 cgip(:_touch)}"
+    FileUtils.touch(n) if test('f', n)
+    files(true)
+    return contentJson(<<EOD)
+{
+  "main" : #{s2json xmain(cgip(:_touch))},
+  "sub"  : #{s2json xsub(s)}
+}
+EOD
+  end
+#----------------------------------------------------------------
+  if cgip(:_write)
+    n = "d/#{to64 cgip(:_write)}"
+    open(n,"w"){|f|f.write(cgip(:text).chomp)}
+    return contentJson(<<EOD)
+{
+  "main" : #{s2json xmain(cgip(:_write))}
+}
+EOD
+  end
+#----------------------------------------------------------------
+  if cgip(:_delete)
+    s = "d/#{to64 cgip(:_delete)}"
+    File.unlink(s) if test('f', s)
+    s = files(true)[0]
+    return contentJson(<<EOD)
+{
+  "main" : #{s2json xmain(s)},
+  "sub"  : #{s2json s}
+}
+EOD
+  end
 #----------------------------------------------------------------
   return <<EOD
 Content-type: text/html; charset=utf-8
@@ -329,10 +363,6 @@ Word <input id="word" type="text" size="12" name="word" value=""/>
 <!-- ================================== -->
 <div class="masonry">
 <!-- ================================ -->
-
-<div class="aaa"></div>
-
-
 #{xall()}
 <!-- ================================ -->
 </div>
