@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/local/bin/ruby
 require 'cgi'
 require 'fileutils'
 require 'base64'
@@ -43,7 +43,7 @@ end
 
 SCRIPT_NAME = File.basename(icgi.script_name)
 #================================================================
-SITE_NAME = 'Masonry Cloud'
+SITE_NAME = 'Memo Cloud'
 #----------------------------------------------------------------
 CSS = <<EOD
 <!--
