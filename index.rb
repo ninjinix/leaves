@@ -220,20 +220,20 @@ end
 
 def xlink(t)
   w = from64(t)
-  s = ['<h2>Link</h2><p>']
+  s = []
   files.map{|i| from64 i}.each do |i|
     s << link_word(i) + '<br/>' if i =~ /#{t}/ && i != t
   end
-  s << '</p>'
+  s = ['<p>'] + s + ['</p>'] if 0 < s.size
   files.each do |i|
     next if i == t
     d = open('d/'+i){|f|f.read}
     n = d.scan(/^.*#{w}.*$/)
     next if n.size < 1
     s << "<p>#{esc('>>')} #{link_word(from64 i)}<br/>"+
-      "#{s2view(n.join("\n"))}</p>"
+      "#{s2view n.join("\n")}</p>"
   end
-  return s.size == 2 ? '' : s.join
+  return s.size < 1 ? '' : '<h2>Link</h2>' + s.join
 end
 
 def xmain(t)
