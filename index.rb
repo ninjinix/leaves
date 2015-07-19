@@ -114,7 +114,7 @@ function prependItem(v) {
 
 function touchItem(s, isEdit) {
   removeItem($('.item.main')[0]);
-  removeItem($('#item_'+to64(s))[0]);
+  removeItem($('#item_'+s)[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
     var v = $(data.main);
     if (isEdit) {
@@ -152,7 +152,7 @@ function mainWrite(s) {
 $(function(){
   $("#word").keypress(function(e) {
     if (e.which == 13) {
-      touchItem($("#word").val());
+      touchItem(to64($("#word").val()));
       $("#word").val("");
     }
   });
@@ -174,18 +174,21 @@ EOD
 #================================================================
 def files(f=false)
   $files = nil if f
-  $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.map{|i|
-    from64 File.basename(i)}
+  $files ||= Dir["d/*"].sort_by{|a|-File.stat(a).mtime.to_i}.
+    map{|i| File.basename(i)}
 end
 
-def link_self(s,c='nop')
-  return s if files[0] == s
-  %|<a class="#{c}" href="#" onclick="touchItem('#{s}')">#{s}</a>|
+def link_self(b, s)
+  %|<a href="#" onclick="touchItem('#{b}')">#{s}</a>|
+end
+def link_word(s,c='nop')
+  b = to64(s)
+  return files[0] == b ? s : link_self(b, s)
 end
 
 def s2view(s)
-  w = files.map{|i| Regexp.escape(i)}.join('|')
-  esc(s+"\n").gsub(/((^,.+\n)+|\n)/){
+  w = files.map{|i| Regexp.escape(from64 i)}.join('|')
+  esc(s).gsub(/((^,.+\n)+|\n)/){
     case $1
     when /((^,.+\n)+)/
       "<table>\n" + $1.split("\n").map{|i|
@@ -209,45 +212,47 @@ def s2view(s)
     when /((http:|https:)\/\/[^\s<>]+)/
       then %|<a href="#{$1}" target="_blank">#{$1}</a>|
     when /(#{w})/
-      then link_self($1,'auto')
+      then link_word($1,'auto')
     else '?'
     end
   }
 end
 
 def xlink(t)
-  s = ['<p>']
-  files.each do |i|
-    s << link_self(i) + '<br/>' if i =~ /#{t}/ && i != t
+  w = from64(t)
+  s = ['<h2>Link</h2><p>']
+  files.map{|i| from64 i}.each do |i|
+    s << link_word(i) + '<br/>' if i =~ /#{t}/ && i != t
   end
   s << '</p>'
   files.each do |i|
-    d = open("d/#{to64 i}"){|f|f.read}
-    n = d.scan(/^.*#{t}.*$/)
-    if 0 < n.size
-      s << "<p>#{esc('>>')} #{link_self(i)}<br/>#{s2view(n.join("\n"))}</p>"
-    end
+    next if i == t
+    d = open('d/'+i){|f|f.read}
+    n = d.scan(/^.*#{w}.*$/)
+    next if n.size < 1
+    s << "<p>#{esc('>>')} #{link_word(from64 i)}<br/>"+
+      "#{s2view(n.join("\n"))}</p>"
   end
-  return s.join
+  return s.size == 2 ? '' : s.join
 end
 
 def xmain(t)
-  return <<EOD unless test('f', "d/"+to64(t))
-<div id="item_#{to64 t}" class="item main">
-<h1>#{t}</h1>
+  return <<EOD unless test('f', 'd/'+t)
+<div id="item_#{t}" class="item main">
+<h1>#{from64 t}</h1>
 <div class="write">
   <textarea id="txt"></textarea>
   <input type="submit" id="write" value="Write" onClick="mainWrite('#{t}')"/>
 </div>
 </div>
 EOD
-  txt = open("d/"+to64(t)){|f|f.read}
+  txt = open('d/'+t){|f|f.read}
   <<EOD
-<div id="item_#{to64 t}" class="item main">
+<div id="item_#{t}" class="item main">
 <div style="float:right;">
   <a href="#" onclick="mainEdit()">[Edit]</a>
 </div>
-<h1>#{t}</h1>
+<h1>#{from64 t}</h1>
 
 <div class="write" style="display: none">
 <textarea id="txt">
@@ -259,7 +264,6 @@ EOD
 
 <div class="view">
 #{s2view txt}
-<h2>Link</h2>
 #{xlink t}
 </div>
 
@@ -269,16 +273,16 @@ end
 
 def xsub(t)
   return '' unless t
-  n = "d/#{to64 t}"
-  return "" unless test('f', n)
-  txt = open(n){|f|f.read}
+  return '' unless test('f', 'd/'+t)
+  a = open('d/'+t){|f|f.read}.split(/^----$/)
   <<EOD
-<div id="item_#{to64 t}" class="item sub">
+<div id="item_#{t}" class="item sub">
 <div style="float:right;">
   <a href="#" onclick="subEdit('#{t}')">[Edit]</a>
 </div>
-<h1>#{link_self(t)}</h1>
-#{s2view txt}
+<h1>#{link_word(from64 t)}</h1>
+#{s2view a[0]}
+#{a.size < 2 ? '' : link_self(t, '&gt ReadMore...')}
 </div>
 EOD
 end
@@ -295,8 +299,8 @@ def main
 #----------------------------------------------------------------
   if cgip(:_touch)
     s = files[0]
-    return "" if s == cgip(:_touch)
-    n = "d/#{to64 cgip(:_touch)}"
+    return '' if s == cgip(:_touch)
+    n = 'd/'+cgip(:_touch)
     FileUtils.touch(n) if test('f', n)
     files(true)
     return contentJson(<<EOD)
@@ -308,8 +312,7 @@ EOD
   end
 #----------------------------------------------------------------
   if cgip(:_write)
-    n = "d/#{to64 cgip(:_write)}"
-    open(n,"w"){|f|f.write(cgip(:text).chomp)}
+    open('d/'+cgip(:_write),"w"){|f|f.write(cgip(:text).chomp)}
     return contentJson(<<EOD)
 {
   "main" : #{s2json xmain(cgip(:_write))}
@@ -318,7 +321,7 @@ EOD
   end
 #----------------------------------------------------------------
   if cgip(:_delete)
-    s = "d/#{to64 cgip(:_delete)}"
+    s = 'd/'+cgip(:_delete)
     File.unlink(s) if test('f', s)
     s = files(true)[0]
     return contentJson(<<EOD)
