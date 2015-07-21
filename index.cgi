@@ -187,7 +187,7 @@ def link_word(s,c='nop')
 end
 
 def s2view(s)
-  w = files.map{|i| Regexp.escape(from64 i)}.join('|')
+  $words ||= files.map{|i| Regexp.escape(from64 i)}.join('|')
   esc(s).gsub(/((^,.+\n)+|\n)/){
     case $1
     when /((^,.+\n)+)/
@@ -197,7 +197,7 @@ def s2view(s)
       }.join + "</table>\n"
     when "\n" then "<br/>\n"
     end
-  }.gsub(/( |\t|\[\[.+?\]\]|(http:|https:)\/\/[^\s<>]+|(#{w}))/){
+  }.gsub(/( |\t|\[\[.+?\]\]|(http:|https:)\/\/[^\s<>]+|(#{$words}))/){
     case $1
     when " "
       then '&nbsp;'
@@ -211,7 +211,7 @@ def s2view(s)
       then %|<a href="?#{CGI.escape(unesc($1))}">#{$1}</a>|
     when /((http:|https:)\/\/[^\s<>]+)/
       then %|<a href="#{$1}" target="_blank">#{$1}</a>|
-    when /(#{w})/
+    when /(#{$words})/
       then link_word($1,'auto')
     else '?'
     end
