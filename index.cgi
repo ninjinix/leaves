@@ -113,6 +113,9 @@ function prependItem(v) {
 }
 
 function touchItem(s, isEdit) {
+//if ($('.item.main').attr('id') == 'item_'+s) {
+//  return;
+//}
   removeItem($('.item.main')[0]);
   removeItem($('#item_'+s)[0]);
   ajaxPost({_touch:s}, function(data, dataType) {
@@ -182,8 +185,7 @@ def link_self(b, s)
   %|<a href="#" onclick="touchItem('#{b}')">#{s}</a>|
 end
 def link_word(s,c='nop')
-  b = to64(s)
-  return files[0] == b ? s : link_self(b, s)
+  link_self(to64(s), s)
 end
 
 def s2view(s)
@@ -299,7 +301,11 @@ def main
 #----------------------------------------------------------------
   if cgip(:_touch)
     s = files[0]
-    return '' if s == cgip(:_touch)
+    return contentJson(<<EOD) if s == cgip(:_touch)
+{
+  "main" : #{s2json xmain(s)}
+}
+EOD
     n = 'd/'+cgip(:_touch)
     FileUtils.touch(n) if test('f', n)
     files(true)
